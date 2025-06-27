@@ -92,8 +92,8 @@ h3{
 }
 
 .miniaturepaysage {
-   width: 256px;
-  height: 192px; 
+   width: 320px;
+  height: 240px; 
   border-radius: 22px;
   margin-left: 10px;
   overflow: hidden; 
@@ -104,8 +104,8 @@ h3{
 
 .miniaturepaysage img {
   object-fit: cover;
-     width: 256px;
-  height: 192px; 
+     width: 320px;
+  height: 240px; 
   border-radius: 22px;
 }
 .miniahybride {
