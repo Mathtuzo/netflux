@@ -1,4 +1,3 @@
-
 .headpage{
     width: 100%;
     height: 75vh;
@@ -40,14 +39,25 @@ text-shadow:  1px 1px 2px #000000,
   margin: 0 10px;
   width: 60px;
   height: 60px;
+  border: none;
+  cursor: pointer;
 }
+
 .headButton{
   display: flex;
   justify-content: space-around;
   align-items: center;
   width: 180px;
   height: 40px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  cursor: pointer;
 }
+.headButton u{
+  text-decoration: none;
+}
+
 .LectureButton{
   height: 80%;
 }
@@ -140,7 +150,13 @@ h3{
 }
 }
 @media (max-width: 768px) {
+  .container{
+    padding-bottom: 105px;
+  }
 
+  .HeadInfo span{
+    
+  }
 
  .HeadInfo{
   width: 100%;
@@ -161,6 +177,9 @@ background-color: rgba(0, 0, 0, 0.5);
 border-radius: 50%;
 width: 80px;
 height: 80px;
+display: flex;
+align-items: center;
+justify-content: center;
 position: absolute;
 }
 .headButton u{
@@ -173,11 +192,10 @@ position: absolute;
   left: 2%;
 }
 .LectureButton{
-  height: 100%;
+  scale: 0.7;
 }
 .FavorieButton{
-  height: 100%;
-  width: 100%;
+  scale: 0.7;
 }
 .Infobutton{
   opacity: 0.8;
@@ -221,14 +239,20 @@ position: absolute;
 
 }
 /* /////////////// slider  ///////////////////////////////////// */
+.main-content-filter{
+  padding: 0 1rem 1rem 1rem;
+  
+}
+
+
 .Paysage-nav {
   background-color: rgba(0, 0, 0, 0.6);
   color: white;
   font-size: 35px;
   font-weight: 700;
-  width: 15px;
-  height: 240px;
+  height: 100%;
   border-radius: 22px;
+  border: none;
   cursor: pointer;
   transition: 0.5s;
   z-index: 10;
@@ -240,9 +264,9 @@ position: absolute;
   color: white;
   font-size: 35px;
   font-weight: 700;
-  width: 15px;
-  height: 416px;
+  height: 100%;
   border-radius: 22px;
+  border: none;
   cursor: pointer;
   transition: 0.5s;
   z-index: 10;
@@ -271,6 +295,9 @@ left: 0;
 right: 0;
 }
 
+.swiper-wrapper{
+  gap: 30px;
+}
 
 .swiper-container {
   padding: 0 30px;

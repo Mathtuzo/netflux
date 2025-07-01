@@ -1,21 +1,66 @@
-import './Modal.css';
-import { useState } from 'react';
+import '../../components/modal/Modal.css';
+import { useState, useEffect } from 'react';
 
 
-export default function Modal({ film, onClose }) {
+export default function Modal({ film, onClose, onFavorisUpdate, onDownloadsUpdate }) {
   const [selectedSaisonIndex, setSelectedSaisonIndex] = useState(0);
-  const [isFavorie, setIsFavorie] = useState(film?.favorie || false);
-  const [isDownload, setIsDownload] = useState(film?.download || false); 
-  
-    if (!film) return null;
-    const toggleFavorie = () => {
-      setIsFavorie(!isFavorie);
-      film.favorie = !isFavorie;
-    };
-    const toggleDownload = () => { // AJOUT
+  const [favoriTrigger, setFavoriTrigger] = useState(false);
+  const [isDownload, setIsDownload] = useState(false);
+
+  useEffect(() => {
+    if (!film) return;
+
+    // Vérifier si le film est en favoris
+    const favoris = JSON.parse(localStorage.getItem("favoris")) || [];
+    const isFavori = favoris.some(fav => fav.Title === film.titre);
+    setFavoriTrigger(isFavori);
+
+    // Vérifier si le film est téléchargé
+    const downloads = JSON.parse(localStorage.getItem("downloads")) || [];
+    const isDl = downloads.some(dl => dl.Title === film.titre);
+    setIsDownload(isDl);
+  }, [film]);
+
+  if (!film) return null;
+
+  const toggleFavorie = () => {
+    let favoris = JSON.parse(localStorage.getItem("favoris")) || [];
+
+    const existe = favoris.some(fav => fav.Title === film.titre);
+
+    if (existe) {
+      favoris = favoris.filter(fav => fav.Title !== film.titre);
+    } else {
+      favoris.push({
+        Title: film.titre,
+        img: film.miniPortrait,
+      });
+    }
+
+    localStorage.setItem("favoris", JSON.stringify(favoris));
+    setFavoriTrigger(!favoriTrigger);
+
+    if (onFavorisUpdate) onFavorisUpdate();
+  };
+
+  const toggleDownload = () => {
+    let downloads = JSON.parse(localStorage.getItem("downloads")) || [];
+    const existe = downloads.some(dl => dl.Title === film.titre);
+
+    if (existe) {
+      downloads = downloads.filter(dl => dl.Title !== film.titre);
+    } else {
+      downloads.push({
+        Title: film.titre,
+        img: film.miniPortrait,
+      });
+    }
+
+    localStorage.setItem("downloads", JSON.stringify(downloads));
     setIsDownload(!isDownload);
-    film.download = !isDownload;
-    };
+
+    if (onDownloadsUpdate) onDownloadsUpdate();
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -42,7 +87,7 @@ export default function Modal({ film, onClose }) {
                   d="M26.347 12.0074L22.0042 2.99257C21.2568 1.44102 19.0284 1.49675 18.3594 3.08372L14.6289 11.9337C14.3509 12.5933 13.7414 13.0541 13.031 13.1417L4.14202 14.2388C2.47553 14.4445 1.789 16.4881 2.99333 17.6582L9.96559 24.4322C10.4853 24.9371 10.6913 25.6837 10.5039 26.3837L7.76476 36.6185C7.31529 38.2979 9.07487 39.7116 10.618 38.9108L19.1596 34.4781C19.7372 34.1783 20.4245 34.1783 21.0021 34.4781L29.8046 39.0462C31.3054 39.825 33.0355 38.5056 32.6815 36.8522L30.4412 26.3889C30.2905 25.6849 30.5297 24.9543 31.0675 24.4759L38.6623 17.7193C39.9533 16.5708 39.2786 14.4362 37.5621 14.2382L27.9197 13.1262C27.2383 13.0476 26.6447 12.6254 26.347 12.0074Z"
                         stroke="#D9D9D9"
                         strokeWidth="3"
-                        fill={isFavorie ? "#D9D9D9" : "none"}
+                        fill={favoriTrigger ? "#D9D9D9" : "none"}
                   />
                 </svg>
               </button>
@@ -164,7 +209,7 @@ export default function Modal({ film, onClose }) {
         }
 
         <button className='CloseModalButton' onClick={onClose}>
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Menu / Close_MD"> <path id="Vector" d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Menu / Close_MD"> <path id="Vector" d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
         </button>
       </div>
     </div>

@@ -1,0 +1,110 @@
+/* Conteneur principal */
+#log-form{
+    background-color: #003362;
+    padding: 2rem 3rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    color: white;
+}
+
+/* Titre */
+#form-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+/* Formulaire */
+.loginform {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Labels */
+.loginform label {
+    text-align: left;
+    font-weight: 600;
+    color: white;
+}
+
+/* Inputs */
+.loginform input[type="text"],
+.loginform input[type="password"],
+.loginform input[type="email"] {
+    padding: 0.75rem;
+    border: 1px solid #333333;
+    border-radius: 10px;
+    outline: none;
+    transition: 0.3s;
+    color: black;
+}
+
+.loginform input[type="text"]:focus,
+.loginform input[type="password"]:focus,
+.loginform input[type="email"]:focus {
+    border-color: 	#ff7b0000;
+    box-shadow: 0 0 20px 0 var(--main-color);
+
+}
+
+/* Bouton submit */
+#submit {
+    background: var(--main-color);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+#submit:hover {
+    background: #006ec2;
+}
+
+/* Lien en dessous */
+.loginform a, #btn-form {
+    font-size: 0.9rem;
+    color: 	white;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.loginform a:hover, #btn-form:hover {
+    color: var(--main-color);
+}
+
+/* Bouton du formulaire */
+#btn-form {
+    margin-top: 0.5rem;
+    display: inline-block;
+    font-weight: bold;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#btn-form, #btn-mdp{
+    width: fit-content;
+    align-self: center;
+}
+
+
+/* Erreurs */
+.error {
+    color: 	#ef4444;
+    font-size: 0.85rem;
+    text-align: left;
+    min-height: 1.2em;
+}
+
+.main-content{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

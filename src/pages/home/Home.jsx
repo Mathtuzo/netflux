@@ -1,15 +1,16 @@
-import films from './Filmlist'
+import films from '../../assets/Filmlist'
 import { useState, useEffect } from 'react'
-import Modal from './modal'
+import Modal from '../../components/modal/Modal'
 import { useMediaQuery } from 'react-responsive';
-import './Mainpage.css'
+import '../home/mainpage.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import { Navigation } from 'swiper/modules'
-export default function Acceuil() {
+export default function Home() {
 
   const [selectedFilm, setSelectedFilm] = useState(null)
+  
 
    const isMobile = useMediaQuery({ maxWidth: 768 });
   
@@ -68,7 +69,7 @@ return (
             <g clipPath="url(#clip0_79_131)">
             <path d="M30 2.50001C24.561 2.50001 19.2442 4.11286 14.7218 7.1346C10.1995 10.1563 6.67474 14.4513 4.59333 19.4762C2.51192 24.5012 1.96732 30.0305 3.02842 35.365C4.08951 40.6995 6.70863 45.5995 10.5546 49.4454C14.4005 53.2914 19.3006 55.9105 24.635 56.9716C29.9695 58.0327 35.4988 57.4881 40.5238 55.4067C45.5488 53.3253 49.8437 49.8005 52.8654 45.2782C55.8872 40.7558 57.5 35.439 57.5 30C57.5166 26.384 56.8166 22.8006 55.4404 19.4567C54.0643 16.1127 52.0393 13.0746 49.4823 10.5177C46.9254 7.96076 43.8873 5.93576 40.5434 4.55962C37.1994 3.18347 33.616 2.48346 30 2.50001ZM32.5 42.5C32.5 43.1631 32.2366 43.7989 31.7678 44.2678C31.2989 44.7366 30.6631 45 30 45C29.337 45 28.7011 44.7366 28.2322 44.2678C27.7634 43.7989 27.5 43.1631 27.5 42.5V27.5C27.5 26.837 27.7634 26.2011 28.2322 25.7322C28.7011 25.2634 29.337 25 30 25C30.6631 25 31.2989 25.2634 31.7678 25.7322C32.2366 26.2011 32.5 26.837 32.5 27.5V42.5ZM30 20C29.5056 20 29.0222 19.8534 28.6111 19.5787C28.2 19.304 27.8795 18.9135 27.6903 18.4567C27.5011 17.9999 27.4516 17.4972 27.548 17.0123C27.6445 16.5273 27.8826 16.0819 28.2322 15.7322C28.5819 15.3826 29.0273 15.1445 29.5123 15.048C29.9972 14.9516 30.4999 15.0011 30.9567 15.1903C31.4135 15.3795 31.804 15.7 32.0787 16.1111C32.3534 16.5222 32.5 17.0056 32.5 17.5C32.5 18.1631 32.2366 18.7989 31.7678 19.2678C31.2989 19.7366 30.6631 20 30 20Z" fill="#D9D9D9"/>
             </g>
-            <rect x="0.5" y="0.5" width="59" height="59" stroke="#D9D9D9"/>
+            <rect x="0.5" y="0.5" width="59" height="59"/>
             <defs>
             <clipPath id="clip0_79_131">
             <rect width="60" height="60" fill="white"/>
@@ -101,7 +102,7 @@ return (
   
 
     {/* Section catalogue */}
-    <div>
+    <div className='main-content-filter'>
       <h3>catalogue</h3>
       <div className="swiper-container">
         <button className="catalogue-prev Portrait-nav">&lt;</button>
@@ -160,7 +161,7 @@ return (
 
 
       {/* Section reprendre */}
-      <div>
+      <div className='main-content-filter'>
         <h3>reprendre</h3>
         {shouldUseSlider ? (
           <div className="swiper-container">
@@ -239,7 +240,7 @@ return (
       </div>
 
       {/* Section plus grand succès */}
-      <div>
+      <div className='main-content-filter'>
         <h3>plus grand succès</h3>
         <div className="swiper-container">
             <button className="succes-prev Paysage-nav">&lt;</button>
