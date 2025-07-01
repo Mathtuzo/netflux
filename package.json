@@ -1,5 +1,5 @@
 {
-  "name": "netflux",
+  "name": "exemple_router",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,10 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "firebase": "^11.9.1",
+    "@reduxjs/toolkit": "^2.8.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.57.0",
+    "react-redux": "^9.2.0",
     "react-responsive": "^10.0.1",
+    "react-router-dom": "^7.6.0",
     "swiper": "^11.2.8"
   },
   "devDependencies": {

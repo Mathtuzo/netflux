@@ -1,21 +1,11 @@
-//import { useState } from 'react'
+import { RouterProvider } from 'react-router-dom'
+import appRouter from './appRouter'
 import './App.css'
-import Acceuil from './assets/Acceuil.jsx'
-//import ImportFilms from './assets/ImportFilms.jsx'
-// import Test from './assets/Test.jsx'
 
-function App() {
-  // const [count, setCount] = useState(0)
+export default function App() {
+  
 
-  return (
-    <>
-      <div>
-        
-        <Acceuil/> 
-        
-      </div>
-    </>
-  )
+  return  <RouterProvider router={appRouter}></RouterProvider>
 }
 
-export default App
+
