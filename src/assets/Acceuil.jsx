@@ -1,4 +1,5 @@
-import films from './Filmlist'
+//import films from './Filmlist'
+import { getFilmsFromBdd } from "./ImportBDD";
 import { useState, useEffect } from 'react'
 import Modal from './modal'
 import { useMediaQuery } from 'react-responsive';
@@ -7,21 +8,43 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import { Navigation } from 'swiper/modules'
+import { toggleFavori } from'./UpdateBDD';
 export default function Acceuil() {
+  const [selectedFilm, setSelectedFilm] = useState(null);
+  const [films, setFilms] = useState([]);
+  const [randomHeadIMG, setRandomFilm] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
-  const [selectedFilm, setSelectedFilm] = useState(null)
+  useEffect(() => {
+    const fetchFilms = async () => {
+      try {
+        const data = await getFilmsFromBdd();
+        setFilms(data);
 
-   const isMobile = useMediaQuery({ maxWidth: 768 });
-  
+        // Une fois les films récupérés, choisir un film aléatoire avec miniPaysage
+        const withPaysage = data.filter(f => f.miniPaysage);
+        if (withPaysage.length > 0) {
+          const film = withPaysage[Math.floor(Math.random() * withPaysage.length)];
+          setRandomFilm(film);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des films :", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFilms();
+  }, []);
 
   const top10MostViewed = [...films]
     .sort((a, b) => b.view - a.view)
     .slice(0, 10);
 
   const filmsToResume = films.filter(film => {
-    const type = film.type?.toLowerCase(); // sécurise et force en minuscules
+    const type = film.type?.toLowerCase();
     const isFilmWithProgress = type === 'film' && film.watchtime > 5 && film.watchtime < 90;
-
     const isSerieWithProgress =
       type === 'serie' &&
       Array.isArray(film.saison) &&
@@ -29,22 +52,16 @@ export default function Acceuil() {
         Array.isArray(s.episodes) &&
         s.episodes.some(ep => ep.watchtime > 5 && ep.watchtime < 90)
       );
-      
     return isFilmWithProgress || isSerieWithProgress;
-});
+  });
 
- const shouldUseSlider = filmsToResume.length > 5 || (isMobile && filmsToResume.length > 2)
-// Sélection aléatoire d'une image "Paysage"
-  const [randomHeadIMG, setRandomFilm] = useState(null);
-  const filmsWithPaysage = films.filter(f => f.miniPaysage);
+  const shouldUseSlider = filmsToResume.length > 5 || (isMobile && filmsToResume.length > 2);
 
-  useEffect(() => {
-    const film = filmsWithPaysage[Math.floor(Math.random() * filmsWithPaysage.length)];
-    setRandomFilm(film);
-  }, []);
-
-
+  if (isLoading) {
+    return <div className="loading">Chargement des films...</div>;
+  }
 return (
+
   <div className='container'>
     <div className='headpage'>
       {randomHeadIMG && (
@@ -76,22 +93,36 @@ return (
             </defs>
             </svg>
         </button>
-          <button id='HeadFavorie' className='headButton'  onClick={() => {
-            if (!randomHeadIMG) return;
-            setRandomFilm(prev => ({
-              ...prev,
-              favorie: !prev.favorie
-            }));
-          }} > 
-          <svg xmlns="http://www.w3.org/2000/svg" className='FavorieButton'  viewBox="0 0 41 41" fill="none">
-          <path 
+          <button
+            id="HeadFavorie"
+            className="headButton"
+            onClick={() => {
+              if (!randomHeadIMG?.id) return;
+              toggleFavori(randomHeadIMG.id, randomHeadIMG.favori);
+
+              // Mise à jour immédiate côté UI
+              setRandomFilm(prev => ({
+                ...prev,
+                favori: !prev.favori,
+              }));
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="FavorieButton"
+              viewBox="0 0 41 41"
+              fill="none"
+            >
+              <path
                 d="M26.347 12.0074L22.0042 2.99257C21.2568 1.44102 19.0284 1.49675 18.3594 3.08372L14.6289 11.9337C14.3509 12.5933 13.7414 13.0541 13.031 13.1417L4.14202 14.2388C2.47553 14.4445 1.789 16.4881 2.99333 17.6582L9.96559 24.4322C10.4853 24.9371 10.6913 25.6837 10.5039 26.3837L7.76476 36.6185C7.31529 38.2979 9.07487 39.7116 10.618 38.9108L19.1596 34.4781C19.7372 34.1783 20.4245 34.1783 21.0021 34.4781L29.8046 39.0462C31.3054 39.825 33.0355 38.5056 32.6815 36.8522L30.4412 26.3889C30.2905 25.6849 30.5297 24.9543 31.0675 24.4759L38.6623 17.7193C39.9533 16.5708 39.2786 14.4362 37.5621 14.2382L27.9197 13.1262C27.2383 13.0476 26.6447 12.6254 26.347 12.0074Z"
                 stroke="#D9D9D9"
                 strokeWidth="3"
-                fill={randomHeadIMG?.favorie ? "#D9D9D9" : "none"}
-          />
-          </svg>  <u>Ajouter a la liste</u> 
-        </button>
+                fill={randomHeadIMG?.favori ? "#D9D9D9" : "none"}
+              />
+            </svg>
+            <u>{randomHeadIMG?.favori ? "Retirer de la liste" : "Ajouter à la liste"}</u>
+          </button>
+
         <span>{randomHeadIMG?.genre}</span>
       </div>
       )}
@@ -138,7 +169,7 @@ return (
               },
               1441: {
                 slidesPerView: 5.5,
-                slidesPerGroup: 6,
+                slidesPerGroup: 5,
               },
             }}
         >

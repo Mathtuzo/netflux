@@ -1,5 +1,6 @@
 import './Modal.css';
 import { useState } from 'react';
+import { toggleFavori } from'./UpdateBDD';
 
 
 export default function Modal({ film, onClose }) {
@@ -36,16 +37,34 @@ export default function Modal({ film, onClose }) {
             />
              <div className="modal-buttons">
               <button className="modal-lecture">Lecture</button> 
-               <button className="modal-favorie" onClick={toggleFavorie}>
-                <svg xmlns="http://www.w3.org/2000/svg" className='ModalFavorieButton' viewBox="0 0 41 41" fill="none">
+              <button
+                className="modal-favorie"
+                onClick={() => {
+                  if (!film?.id) return;
+
+                  // Met à jour la BDD
+                  toggleFavori(film.id, isFavorie);
+
+                  // Met à jour l’état local pour le rendu instantané
+                  setIsFavorie(prev => !prev);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="ModalFavorieButton"
+                  viewBox="0 0 41 41"
+                  fill="none"
+                >
                   <path
-                  d="M26.347 12.0074L22.0042 2.99257C21.2568 1.44102 19.0284 1.49675 18.3594 3.08372L14.6289 11.9337C14.3509 12.5933 13.7414 13.0541 13.031 13.1417L4.14202 14.2388C2.47553 14.4445 1.789 16.4881 2.99333 17.6582L9.96559 24.4322C10.4853 24.9371 10.6913 25.6837 10.5039 26.3837L7.76476 36.6185C7.31529 38.2979 9.07487 39.7116 10.618 38.9108L19.1596 34.4781C19.7372 34.1783 20.4245 34.1783 21.0021 34.4781L29.8046 39.0462C31.3054 39.825 33.0355 38.5056 32.6815 36.8522L30.4412 26.3889C30.2905 25.6849 30.5297 24.9543 31.0675 24.4759L38.6623 17.7193C39.9533 16.5708 39.2786 14.4362 37.5621 14.2382L27.9197 13.1262C27.2383 13.0476 26.6447 12.6254 26.347 12.0074Z"
-                        stroke="#D9D9D9"
-                        strokeWidth="3"
-                        fill={isFavorie ? "#D9D9D9" : "none"}
+                    d="M26.347 12.0074L22.0042 2.99257C21.2568 1.44102 19.0284 1.49675 18.3594 3.08372L14.6289 11.9337C14.3509 12.5933 13.7414 13.0541 13.031 13.1417L4.14202 14.2388C2.47553 14.4445 1.789 16.4881 2.99333 17.6582L9.96559 24.4322C10.4853 24.9371 10.6913 25.6837 10.5039 26.3837L7.76476 36.6185C7.31529 38.2979 9.07487 39.7116 10.618 38.9108L19.1596 34.4781C19.7372 34.1783 20.4245 34.1783 21.0021 34.4781L29.8046 39.0462C31.3054 39.825 33.0355 38.5056 32.6815 36.8522L30.4412 26.3889C30.2905 25.6849 30.5297 24.9543 31.0675 24.4759L38.6623 17.7193C39.9533 16.5708 39.2786 14.4362 37.5621 14.2382L27.9197 13.1262C27.2383 13.0476 26.6447 12.6254 26.347 12.0074Z"
+                    stroke="#D9D9D9"
+                    strokeWidth="3"
+                    fill={isFavorie ? "#D9D9D9" : "none"}
                   />
                 </svg>
+
               </button>
+
               <button className="modal-download" onClick={toggleDownload}>
                 <svg xmlns="http://www.w3.org/2000/svg"className='MoadlaDownloadSvg'  viewBox="0 0 37 37" fill="none">
                   <path d="M17 2C17 1.44772 17.4477 1 18 1H20C20.5523 1 21 1.44772 21 2V20.0858C21 20.9767 22.0771 21.4229 22.7071 20.7929L27.8543 15.6457C28.22 15.28 28.8042 15.2535 29.2016 15.5846L30.6588 16.799C31.1105 17.1754 31.1415 17.8585 30.7257 18.2743L21.7929 27.2071C21.6054 27.3946 21.351 27.5 21.0858 27.5H16.9142C16.649 27.5 16.3946 27.3946 16.2071 27.2071L7.20711 18.2071C6.81658 17.8166 6.81658 17.1834 7.20711 16.7929L8.29289 15.7071C8.68342 15.3166 9.31658 15.3166 9.70711 15.7071L15.2929 21.2929C15.9229 21.9229 17 21.4767 17 20.5858V2Z"
@@ -115,12 +134,12 @@ export default function Modal({ film, onClose }) {
             <div>
               <h3>Épisodes</h3>
 
-              <select
+              <select className='SaisonsButton'
                 value={selectedSaisonIndex}
                 onChange={(e) => setSelectedSaisonIndex(Number(e.target.value))}
               >
                 {film.saison.map((s, index) => (
-                  <option key={index} value={index}>
+                  <option className='SaisonsButton' key={index} value={index}> 
                     Saison {s.saison}
                   </option>
                 ))}
@@ -130,11 +149,11 @@ export default function Modal({ film, onClose }) {
                 {film.saison[selectedSaisonIndex].episodes.map((ep, i) => (
                   <div key={(1+i)} className="episode-card">
                     
-                    <img src={`/minia/epSerie/Southpark/${ep.minia}`} alt={ep.titre} />
+                    <img src={`/minia/epSerie/${film.titre}/${ep.minia}`} alt={ep.titre} />
                     
                        <div className="episode-card-title">
                         
-                          <h6>{i+"."+ep.titre} </h6>
+                          <h6>{(i+1)+"."+ep.titre} </h6>
                         <h6>{ep.duree}</h6>
                         <button className="episode-card-download" onClick={toggleDownload}>
                           <svg xmlns="http://www.w3.org/2000/svg"className='episode-cardDownloadSvg'  viewBox="0 0 37 37" fill="none">

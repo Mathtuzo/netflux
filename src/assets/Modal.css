@@ -143,10 +143,19 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-right: 1rem;
+}
+.SaisonsButton{
+  border-radius: 22px;
+  padding: 5px 20px;
+  margin: 5px ;
+  background-color: aliceblue;
+  color: #060247;
+  font-weight: 800;
 }
 .episode-card{
   display: grid;
-  grid-template-columns:35% 65%;
+  grid-template-columns:27% 65%;
   padding: 10px 0px;
   align-items: start;
 }

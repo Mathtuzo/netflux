@@ -47,6 +47,7 @@ text-shadow:  1px 1px 2px #000000,
   align-items: center;
   width: 180px;
   height: 40px;
+  padding: 0.6em 1rem;
 }
 .LectureButton{
   height: 80%;
@@ -241,7 +242,7 @@ position: absolute;
   font-size: 35px;
   font-weight: 700;
   width: 15px;
-  height: 416px;
+  height: 352px;
   border-radius: 22px;
   cursor: pointer;
   transition: 0.5s;
