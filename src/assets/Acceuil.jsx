@@ -1,7 +1,7 @@
 //import films from './Filmlist'
 import { getFilmsFromBdd } from "./ImportBDD";
 import { useState, useEffect } from 'react'
-import Modal from './modal'
+import Modal from './Modal'
 import { useMediaQuery } from 'react-responsive';
 import './Mainpage.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
