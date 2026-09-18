@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36" fill="none">
+  <defs>
+    <linearGradient id="nfBlueLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002b54" />
+      <stop offset="100%" stop-color="#001830" />
+    </linearGradient>
+    <linearGradient id="nfBlueCenter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0090ff" />
+      <stop offset="40%" stop-color="#006ec2" />
+      <stop offset="100%" stop-color="#003362" />
+    </linearGradient>
+    <linearGradient id="nfBlueRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#004b87" />
+      <stop offset="100%" stop-color="#002244" />
+    </linearGradient>
+    <filter id="nfGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#006ec2" flood-opacity="0.45" />
+    </filter>
+  </defs>
+  <!-- Background subtle rounded shield -->
+  <rect width="36" height="36" rx="8" fill="#0c192c" />
+  <!-- Left vertical bar -->
+  <path d="M7 6H13V30H7V6Z" fill="url(#nfBlueLeft)" />
+  <!-- Right vertical bar -->
+  <path d="M23 6H29V30H23V6Z" fill="url(#nfBlueRight)" />
+  <!-- Dynamic diagonal ribbon with shadow/glow -->
+  <path d="M7 6H13L29 30H23L7 6Z" fill="url(#nfBlueCenter)" filter="url(#nfGlow)" />
+</svg>

@@ -1,0 +1,52 @@
+.dropdowns{
+    display: flex;
+    flex-direction: column;
+}
+.dropdowns-content{
+    background-color: #D9D9D9;
+    border-radius: 10px;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    color: black;
+}
+.dropdowns-content h3, .dropdowns p{
+    color: black;
+    margin: 0;
+}
+.open{
+    border-radius: 10px 10px 0 0;
+}
+
+.dropdowns img{
+    height: 40px;
+    rotate: 180deg;
+    
+}
+.dropdowns p{
+    background-color: #d9d9d9cb;
+    padding: 10px;
+    border-radius: 0 0 10px 10px;
+}
+
+.dropdowns .img-open{
+    transform: rotate(90deg);
+}
+
+.faq-group{
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 2rem;
+    align-items: center;
+    padding-top: 3rem;
+    padding-bottom: 105px;
+}
+
+@media (min-width: 768px){
+    .dropdowns{
+        width: 50%;
+    }
+}

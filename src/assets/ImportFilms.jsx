@@ -23,4 +23,4 @@ const ImportFilms = () => {
   return <div>📦 Importation en cours...</div>;
 };
 
-// export default ImportFilms;
+export default ImportFilms;

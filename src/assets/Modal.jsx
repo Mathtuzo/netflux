@@ -1,53 +1,83 @@
 import './Modal.css';
-import { useState } from 'react';
-import { toggleFavori } from'./UpdateBDD';
+import { useState, useEffect } from 'react';
+import { getMissingFields, getImageUrl, isPlaceholderOrEmpty, formatDuration, getEpisodeImageUrl, getSimilarFilms } from './filmHelpers';
+import { isFilmFavori, toggleFilmFavori, isFilmDownloaded, toggleFilmDownload } from './userLists';
 
-
-export default function Modal({ film, onClose }) {
+export default function Modal({ film, onClose, allFilms = [], onSelectFilm }) {
   const [selectedSaisonIndex, setSelectedSaisonIndex] = useState(0);
-  const [isFavorie, setIsFavorie] = useState(film?.favorie || false);
-  const [isDownload, setIsDownload] = useState(film?.download || false); 
-  
-    if (!film) return null;
-    const toggleFavorie = () => {
-      setIsFavorie(!isFavorie);
-      film.favorie = !isFavorie;
-    };
-    const toggleDownload = () => { // AJOUT
-    setIsDownload(!isDownload);
-    film.download = !isDownload;
-    };
+  const [isFavorie, setIsFavorie] = useState(() => isFilmFavori(film));
+  const [isDownload, setIsDownload] = useState(() => isFilmDownloaded(film));
+
+  useEffect(() => {
+    if (film) {
+      setIsFavorie(isFilmFavori(film));
+      setIsDownload(isFilmDownloaded(film));
+      setSelectedSaisonIndex(0);
+      const modalContent = document.querySelector('.modal-content');
+      if (modalContent) modalContent.scrollTop = 0;
+    }
+  }, [film]);
+
+  if (!film) return null;
+
+  const handleToggleFavori = () => {
+    const newState = toggleFilmFavori(film);
+    setIsFavorie(newState);
+  };
+
+  const handleToggleDownload = () => {
+    const newState = toggleFilmDownload(film);
+    setIsDownload(newState);
+  };
+
+
+  const seasonsData = Array.isArray(film.saison) ? film.saison : Array.isArray(film.episodes) ? film.episodes : null;
+  const isSerie = (film.type && film.type.toLowerCase().includes('serie')) || Boolean(seasonsData) || Boolean(film.saisons);
+  const missingFields = getMissingFields(film);
+  const headerImageUrl = getImageUrl(film.miniPaysage) || getImageUrl(film.miniPortrait) || getImageUrl(film.affiche);
+  const titleImageUrl = getImageUrl(film.titleIMG);
+  const similarFilms = getSimilarFilms(film, allFilms, 6);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-image-wrapper">
-          <img
-            src={`/minia/${film.miniPaysage}`}
-            alt={film.titre}
-            className="modal-image"
-          />
-          <span className="resolution">{film.resolutionmax}</span>
+          {headerImageUrl ? (
+            <img
+              src={headerImageUrl}
+              alt={film.titre || 'Affiche'}
+              className="modal-image"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="modal-image-fallback">
+              <span>🎬 {film.titre || 'Titre manquant'}</span>
+            </div>
+          )}
+          <span className="resolution">{film.resolutionmax || 'HD'}</span>
 
           <div className="modal-overlay">
-            <img
-              src={`/minia/${film.titleIMG}`}
-              alt={film.titre}
-              className="modal-titre"
-            />
-             <div className="modal-buttons">
+            {titleImageUrl ? (
+              <img
+                src={titleImageUrl}
+                alt={film.titre || 'Titre'}
+                className="modal-titre"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <h2 className="modal-titre-text">{film.titre || film.title || 'Titre manquant'}</h2>
+            )}
+
+            <div className="modal-buttons">
               <button className="modal-lecture">Lecture</button> 
               <button
-                className="modal-favorie"
-                onClick={() => {
-                  if (!film?.id) return;
-
-                  // Met à jour la BDD
-                  toggleFavori(film.id, isFavorie);
-
-                  // Met à jour l’état local pour le rendu instantané
-                  setIsFavorie(prev => !prev);
-                }}
+                className={`modal-favorie ${isFavorie ? 'active' : ''}`}
+                onClick={handleToggleFavori}
+                title={isFavorie ? "Retirer de ma liste" : "Ajouter à ma liste"}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -62,11 +92,14 @@ export default function Modal({ film, onClose }) {
                     fill={isFavorie ? "#D9D9D9" : "none"}
                   />
                 </svg>
-
               </button>
 
-              <button className="modal-download" onClick={toggleDownload}>
-                <svg xmlns="http://www.w3.org/2000/svg"className='MoadlaDownloadSvg'  viewBox="0 0 37 37" fill="none">
+              <button
+                className={`modal-download ${isDownload ? 'active' : ''}`}
+                onClick={handleToggleDownload}
+                title={isDownload ? "Téléchargé (cliquer pour supprimer)" : "Télécharger"}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className='MoadlaDownloadSvg' viewBox="0 0 37 37" fill="none">
                   <path d="M17 2C17 1.44772 17.4477 1 18 1H20C20.5523 1 21 1.44772 21 2V20.0858C21 20.9767 22.0771 21.4229 22.7071 20.7929L27.8543 15.6457C28.22 15.28 28.8042 15.2535 29.2016 15.5846L30.6588 16.799C31.1105 17.1754 31.1415 17.8585 30.7257 18.2743L21.7929 27.2071C21.6054 27.3946 21.351 27.5 21.0858 27.5H16.9142C16.649 27.5 16.3946 27.3946 16.2071 27.2071L7.20711 18.2071C6.81658 17.8166 6.81658 17.1834 7.20711 16.7929L8.29289 15.7071C8.68342 15.3166 9.31658 15.3166 9.70711 15.7071L15.2929 21.2929C15.9229 21.9229 17 21.4767 17 20.5858V2Z"
                     fill={isDownload ? "#D9D9D9" : "none"}
                     stroke="#D9D9D9"
@@ -77,86 +110,136 @@ export default function Modal({ film, onClose }) {
                   />
                 </svg>
               </button>
-             </div>
+            </div>
           </div> 
         </div>
 
-        {film.type === "Film" && (
-          <div className="modal-details">
-            <h5>{film.genre}</h5>
-            <div className="modal-details-grid">
-              <div className="modal-left">
-                <div className="modal-infobase">
-                  <h4>{film.annee}</h4>
-                  <h4>{film.duree}</h4>
-                  <h4>{film.restriction}</h4>
-                </div>
-                <p className="modal-synopsis">{film.synopsis}</p>
-              </div>
-              <div className="modal-infodistrib">
-                <p>
-                  <strong>Distribution:</strong> {film.distribution}
-                </p>
-                <p>
-                  <strong>Réalisation:</strong> {film.realisation}
-                </p>
-              </div>
+        {/* Alerte des données manquantes pour que l'utilisateur puisse compléter */}
+        {missingFields.length > 0 && (
+          <div className="modal-missing-panel">
+            <div className="modal-missing-header">
+              <span className="modal-missing-badge-title">⚠️ DONNÉES INCOMPLÈTES</span>
+              <span className="modal-missing-count">{missingFields.length} champ(s) manquant(s) à compléter dans la base :</span>
+            </div>
+            <div className="modal-missing-chips">
+              {missingFields.map((field, idx) => (
+                <span key={idx} className="missing-chip">
+                  {field}
+                </span>
+              ))}
             </div>
           </div>
+        )}
 
-        )
-        }
-        {
-          film.type === "Serie" && (
-          <div className="modal-details">
-            <h5>{film.genre}</h5>
-            <div className="modal-details-grid">
-              <div className="modal-left">
-                <div className="modal-infobase">
-                  <h4>{film.annee}</h4>
-                  {film.saison && <h4>{film.saison.length} Saisons</h4>}
-                  <h4>{film.restriction}</h4>
-                </div>
-                <p className="modal-synopsis">{film.synopsis}</p>
+        {/* Détails du film ou de la série */}
+        <div className="modal-details">
+          <h5>
+            {isPlaceholderOrEmpty(film.genre) ? (
+              <span className="missing-data-text">⚠️ Genre non renseigné</span>
+            ) : Array.isArray(film.genre) ? (
+              film.genre.join(', ')
+            ) : (
+              film.genre
+            )}
+          </h5>
+          <div className="modal-details-grid">
+            <div className="modal-left">
+              <div className="modal-infobase">
+                <h4>{film.annee || film.year || <span className="missing-data-text">Année ?</span>}</h4>
+                {isSerie ? (
+                  <h4>
+                    {seasonsData
+                      ? `${seasonsData.length} Saison(s)`
+                      : film.saisons
+                      ? `${film.saisons} Saison(s)`
+                      : <span className="missing-data-text">Saisons ?</span>}
+                  </h4>
+                ) : (
+                  <h4>
+                    {formatDuration(film.duree || film.duration) || <span className="missing-data-text">Durée ?</span>}
+                  </h4>
+                )}
+                <h4>{film.restriction || <span className="missing-data-text">Âge ?</span>}</h4>
               </div>
-              <div className="modal-infodistrib">
-                <p>
-                  <strong>Distribution:</strong> {film.distribution}
-                </p>
-                <p>
-                  <strong>Réalisation:</strong> {film.realisation}
-                </p>
-              </div>
+              <p className="modal-synopsis">
+                {isPlaceholderOrEmpty(film.synopsis) && isPlaceholderOrEmpty(film.description) ? (
+                  <span className="missing-data-text">⚠️ Synopsis non renseigné dans la base de données.</span>
+                ) : (
+                  film.synopsis || film.description
+                )}
+              </p>
             </div>
+            <div className="modal-infodistrib">
+              <p>
+                <strong>Distribution :</strong>{' '}
+                {isPlaceholderOrEmpty(film.distribution) ? (
+                  <span className="missing-data-text">Non renseignée</span>
+                ) : (
+                  film.distribution
+                )}
+              </p>
+              <p>
+                <strong>Réalisation :</strong>{' '}
+                {isPlaceholderOrEmpty(film.realisation) ? (
+                  <span className="missing-data-text">Non renseignée</span>
+                ) : (
+                  film.realisation
+                )}
+              </p>
+              <p>
+                <strong>Type :</strong>{' '}
+                {film.type || <span className="missing-data-text">Non spécifié (Film ou Série)</span>}
+              </p>
+            </div>
+          </div>
+        </div>
 
-            {/* --- Dropdown et épisodes --- */}
-          {film.saison && film.saison.length > 0 && (
-            <div>
-              <h3>Épisodes</h3>
+        {/* --- Dropdown et épisodes pour les séries --- */}
+        {isSerie && (
+          <div>
+            <h3>Épisodes</h3>
+            {seasonsData && seasonsData.length > 0 ? (
+              <>
+                <select
+                  className='SaisonsButton'
+                  value={selectedSaisonIndex}
+                  onChange={(e) => setSelectedSaisonIndex(Number(e.target.value))}
+                >
+                  {seasonsData.map((s, index) => (
+                    <option className='SaisonsButton' key={index} value={index}> 
+                      Saison {s.saison || (index + 1)}
+                    </option>
+                  ))}
+                </select>
 
-              <select className='SaisonsButton'
-                value={selectedSaisonIndex}
-                onChange={(e) => setSelectedSaisonIndex(Number(e.target.value))}
-              >
-                {film.saison.map((s, index) => (
-                  <option className='SaisonsButton' key={index} value={index}> 
-                    Saison {s.saison}
-                  </option>
-                ))}
-              </select>
-
-              <div className="episode-list">
-                {film.saison[selectedSaisonIndex].episodes.map((ep, i) => (
-                  <div key={(1+i)} className="episode-card">
-                    
-                    <img src={`/minia/epSerie/${film.titre}/${ep.minia}`} alt={ep.titre} />
-                    
-                       <div className="episode-card-title">
-                        
-                          <h6>{(i+1)+"."+ep.titre} </h6>
-                        <h6>{ep.duree}</h6>
-                        <button className="episode-card-download" onClick={toggleDownload}>
-                          <svg xmlns="http://www.w3.org/2000/svg"className='episode-cardDownloadSvg'  viewBox="0 0 37 37" fill="none">
+                <div className="episode-list">
+                  {seasonsData[selectedSaisonIndex]?.episodes?.map((ep, i) => (
+                    <div key={(1+i)} className="episode-card">
+                      <div className="episode-card-img-wrapper">
+                        <img
+                          src={getEpisodeImageUrl(ep.minia, film.titre) || headerImageUrl || ''}
+                          alt={ep.titre || 'Episode'}
+                          onError={(e) => {
+                            if (headerImageUrl && e.currentTarget.src !== headerImageUrl) {
+                              e.currentTarget.src = headerImageUrl;
+                            }
+                          }}
+                        />
+                        {Number(ep.watchtime) > 7 && Number(ep.watchtime) < 93 && (
+                          <div className="card-progressbar">
+                            <div
+                              className="card-progressbar-fill"
+                              style={{ width: `${Math.min(Math.max(Number(ep.watchtime), 0), 100)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="episode-card-title">
+                        <h6>{(i+1) + ". " + (ep.titre || "Titre de l'épisode manquant")}</h6>
+                        <h6>{ep.duree || "Durée ?"}</h6>
+                        <button className={`episode-card-download ${isDownload ? 'active' : ''}`} onClick={handleToggleDownload} title={isDownload ? "Téléchargé" : "Télécharger"}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className='episode-cardDownloadSvg' viewBox="0 0 37 37" fill="none">
                             <path d="M17 2C17 1.44772 17.4477 1 18 1H20C20.5523 1 21 1.44772 21 2V20.0858C21 20.9767 22.0771 21.4229 22.7071 20.7929L27.8543 15.6457C28.22 15.28 28.8042 15.2535 29.2016 15.5846L30.6588 16.799C31.1105 17.1754 31.1415 17.8585 30.7257 18.2743L21.7929 27.2071C21.6054 27.3946 21.351 27.5 21.0858 27.5H16.9142C16.649 27.5 16.3946 27.3946 16.2071 27.2071L7.20711 18.2071C6.81658 17.8166 6.81658 17.1834 7.20711 16.7929L8.29289 15.7071C8.68342 15.3166 9.31658 15.3166 9.70711 15.7071L15.2929 21.2929C15.9229 21.9229 17 21.4767 17 20.5858V2Z"
                               fill={isDownload ? "#D9D9D9" : "none"}
                               stroke="#D9D9D9"
@@ -167,23 +250,81 @@ export default function Modal({ film, onClose }) {
                             />
                           </svg>
                         </button>
-
                       </div>
-                        <p>{ep.synopsis}</p>
-                    
-                   
+                      <p>{ep.synopsis || <span className="missing-data-text">Synopsis de l'épisode à renseigner.</span>}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="missing-data-text">⚠️ Aucun épisode renseigné pour cette série dans la base de données.</p>
+            )}
+          </div>
+        )}
+
+        {/* --- Section Recommandations / Titres similaires --- */}
+        {similarFilms && similarFilms.length > 0 && (
+          <div className="modal-similar-section">
+            <h3 className="modal-similar-heading">Titres similaires</h3>
+            <div className="modal-similar-grid">
+              {similarFilms.map((sim, i) => {
+                if (!sim) return null;
+                const simImg = getImageUrl(sim.miniPaysage) || getImageUrl(sim.miniPortrait) || getImageUrl(sim.affiche);
+                const isSimSerie = (sim.type && typeof sim.type === 'string' && sim.type.toLowerCase().includes('serie')) || Array.isArray(sim.saison);
+                const durationLabel = isSimSerie
+                  ? (Array.isArray(sim.saison) ? `${sim.saison.length} Saison(s)` : 'Série')
+                  : formatDuration(sim.duree || sim.duration) || (typeof sim.duree === 'string' ? sim.duree : '');
+
+                return (
+                  <div
+                    key={sim.id || `sim-${i}`}
+                    className="similar-card"
+                    onClick={() => {
+                      if (onSelectFilm) {
+                        onSelectFilm(sim);
+                      }
+                    }}
+                  >
+                    <div className="similar-card-img-wrapper">
+                      {simImg ? (
+                        <img
+                          src={simImg}
+                          alt={sim.titre || 'Film similaire'}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className="similar-card-placeholder" style={{ display: simImg ? 'none' : 'flex' }}>
+                        <span>🎬</span>
+                        <p>{sim.titre}</p>
+                      </div>
+                      <span className="similar-card-resolution">{sim.resolutionmax || 'HD'}</span>
+                    </div>
+
+                    <div className="similar-card-body">
+                      <div className="similar-card-meta">
+                        <span className="similar-card-badge">{sim.restriction || '+12'}</span>
+                        <span className="similar-card-year">{sim.annee || sim.year || ''}</span>
+                        {durationLabel && <span className="similar-card-duration">{durationLabel}</span>}
+                      </div>
+                      <h4 className="similar-card-title">{sim.titre}</h4>
+                      <p className="similar-card-synopsis">
+                        {sim.synopsis || sim.description || 'Sélectionnez ce titre pour découvrir ses détails.'}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-          
-          )
-        }
+          </div>
+        )}
 
         <button className='CloseModalButton' onClick={onClose}>
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Menu / Close_MD"> <path id="Vector" d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Menu / Close_MD"> <path id="Vector" d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> </g> </g></svg>
         </button>
       </div>
     </div>

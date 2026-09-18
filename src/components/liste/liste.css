@@ -1,0 +1,155 @@
+#liste-group{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+}
+#liste-page{
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 100%;
+    margin-bottom: 105px;
+    align-items: center;
+    
+}
+
+#liste-nav{
+    display: flex;
+    gap: 2rem;
+}
+#liste-nav a{
+    text-decoration: none;
+    color: white;
+}
+
+.link-on{
+    text-decoration: underline !important;
+}
+
+#liste-content{
+    display: flex;
+    width: 100%;
+}
+
+#favori-content{
+    display : flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 4rem;
+
+}
+
+.favori-cards{
+    background-color: transparent;
+    width: 40%;
+    aspect-ratio: 1/1 ;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.favori-cards img{
+    width: 100%;
+    border-radius: 20px;
+}
+
+#dl-content{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    color: white;
+    gap: 2rem;
+}
+.dl-cards{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    min-height: 108px;
+    
+    padding: 0 1rem ;
+}
+.dl-element-img{
+    background-color: white;
+    width: 20%;
+    min-width: 259px;
+    aspect-ratio: 2/1 ;
+    border-radius: 20px;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+}
+.dl-actions{
+    display: flex;
+    gap: 1rem;
+}
+
+.dl-btn{
+    border-radius: 30px;
+    border: none;
+    width: 40px;
+    height: 40px;
+    aspect-ratio: 1;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.dl-btn-play{
+    display: none;
+}
+
+.dl-btn img{
+    width: 25px;
+}
+.dl-text{
+    display: flex;
+    flex-direction: column;
+}
+
+
+@media (max-width: 410px){
+    .dl-text{
+        display: none;
+    }
+}
+
+@media (min-width: 768px){
+    .favori-cards{
+        width: 20%;
+    }
+    .dl-btn-play{
+        display: flex;
+    }
+    .dl-btn img{
+        width: 30px;
+    }
+    .dl-btn{
+        width: 60px;
+        height: 60px;
+    }
+         
+}
+@media (max-width: 900px){
+    .dl-description{
+        display: none;
+    }
+}
+
+@media (min-width: 1024px){
+    .favori-cards{
+        width: 20%;
+    }
+    #liste-group{
+        margin-top: 105px;
+    }
+}
+

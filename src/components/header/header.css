@@ -1,0 +1,155 @@
+.netflux-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 68px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 60%, transparent 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 44px;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.netflux-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  user-select: none;
+  margin-right: 2rem;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.netflux-brand:hover {
+  transform: scale(1.03);
+  filter: drop-shadow(0 0 12px rgba(0, 144, 255, 0.45));
+}
+
+.netflux-logo-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.netflux-brand-text {
+  font-size: 1.9rem;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  color: #0077c8;
+  background: linear-gradient(135deg, #4ea8de 0%, #0077b6 40%, #003362 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(0, 119, 182, 0.3);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #e5e5e5;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-item:hover {
+  color: #ffffff;
+}
+
+.nav-item.active-link {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  display: none; /* Icon hidden on desktop, text shown */
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .netflux-header {
+    height: 56px;
+    padding: 0 16px;
+    background: rgba(20, 20, 20, 0.95);
+  }
+
+  .netflux-brand {
+    margin-right: 0;
+    gap: 7px;
+  }
+
+  .netflux-brand-text {
+    font-size: 1.4rem;
+  }
+
+  .netflux-logo-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* Bottom navigation bar for mobile */
+  .nav-links {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #121212;
+    border-top: 1px solid #282828;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    z-index: 100;
+  }
+
+  .nav-item {
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.7rem;
+    color: #888888;
+  }
+
+  .nav-item.active-link {
+    color: #0090ff;
+  }
+
+  .nav-icon {
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+}

@@ -1,58 +1,108 @@
-//import films from './Filmlist'
+import fallbackFilms from './Filmlist';
 import { getFilmsFromBdd } from "./ImportBDD";
-import { useState, useEffect } from 'react'
-import Modal from './Modal'
+import { useState, useEffect } from 'react';
+import Modal from './Modal';
 import { useMediaQuery } from 'react-responsive';
-import './Mainpage.css'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import 'swiper/css'
-import 'swiper/css/navigation'
-import { Navigation } from 'swiper/modules'
-import { toggleFavori } from'./UpdateBDD';
-export default function Acceuil() {
+import './Mainpage.css';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import { Navigation } from 'swiper/modules';
+import { getMissingFields, getImageUrl, isTypeMatch } from './filmHelpers';
+import { isFilmFavori, toggleFilmFavori } from './userLists';
+
+function getWatchtime(film) {
+  if (!film) return 0;
+  // Si moins de 7% du début (<= 7%) ou moins de 7% de la fin (>= 93%), pas de barre ni reprendre
+  if (film.watchtime !== undefined && film.watchtime !== null) {
+    const wt = Number(film.watchtime);
+    if (!isNaN(wt) && wt > 7 && wt < 93) {
+      return Math.min(Math.max(wt, 0), 100);
+    }
+    return 0;
+  }
+  if (Array.isArray(film.saison)) {
+    for (const s of film.saison) {
+      if (Array.isArray(s.episodes)) {
+        const inProgress = s.episodes.find(ep => {
+          const wt = Number(ep.watchtime);
+          return !isNaN(wt) && wt > 7 && wt < 93;
+        });
+        if (inProgress) {
+          return Math.min(Math.max(Number(inProgress.watchtime), 0), 100);
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+export default function Acceuil({ filterType = null }) {
   const [selectedFilm, setSelectedFilm] = useState(null);
-  const [films, setFilms] = useState([]);
-  const [randomHeadIMG, setRandomFilm] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [films, setFilms] = useState(fallbackFilms);
+  const initialPool = filterType ? fallbackFilms.filter(f => isTypeMatch(f?.type, filterType)) : fallbackFilms;
+  const initialRandom = initialPool.length > 0 ? initialPool[Math.floor(Math.random() * initialPool.length)] : fallbackFilms[0];
+  const [randomHeadIMG, setRandomFilm] = useState(initialRandom || null);
+  const [isLoading, setIsLoading] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
   useEffect(() => {
     const fetchFilms = async () => {
+      let data = [];
       try {
-        const data = await getFilmsFromBdd();
+        data = await getFilmsFromBdd();
+        if (!data || data.length === 0) {
+          console.warn("Base de données Firestore vide, utilisation du catalogue local.");
+          data = fallbackFilms;
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des films depuis Firebase :", error);
+        console.info("Utilisation des films locaux en secours (fallback).");
+        data = fallbackFilms;
+      } finally {
         setFilms(data);
 
-        // Une fois les films récupérés, choisir un film aléatoire avec miniPaysage
-        const withPaysage = data.filter(f => f.miniPaysage);
+        // Affiche la liste des contenus incomplets dans la console pour aider l'utilisateur
+        const incomplete = data.filter(f => getMissingFields(f).length > 0);
+        if (incomplete.length > 0) {
+          console.group(`⚠️ Netflux : ${incomplete.length} film(s)/série(s) avec des données manquantes :`);
+          incomplete.forEach(f => {
+            console.warn(`• "${f.titre || f.title || 'Sans titre'}" (ID: ${f.id || 'local'}) -> Manque :`, getMissingFields(f));
+          });
+          console.groupEnd();
+        }
+
+        const targetPool = filterType
+          ? data.filter(f => isTypeMatch(f.type, filterType))
+          : data;
+
+        const pool = targetPool.length > 0 ? targetPool : data;
+        const withPaysage = pool.filter(f => f.miniPaysage || f.miniPortrait);
         if (withPaysage.length > 0) {
           const film = withPaysage[Math.floor(Math.random() * withPaysage.length)];
           setRandomFilm(film);
+        } else if (pool.length > 0) {
+          setRandomFilm(pool[0]);
         }
-      } catch (error) {
-        console.error("Erreur lors du chargement des films :", error);
-      } finally {
         setIsLoading(false);
       }
     };
 
     fetchFilms();
-  }, []);
+  }, [filterType]);
 
-  const top10MostViewed = [...films]
-    .sort((a, b) => b.view - a.view)
+  const displayedFilms = filterType
+    ? films.filter(f => isTypeMatch(f.type, filterType))
+    : films;
+
+  const incompleteCount = displayedFilms.filter(f => getMissingFields(f).length > 0).length;
+
+  const top10MostViewed = [...displayedFilms]
+    .sort((a, b) => (b.view || 0) - (a.view || 0))
     .slice(0, 10);
 
-  const filmsToResume = films.filter(film => {
-    const type = film.type?.toLowerCase();
-    const isFilmWithProgress = type === 'film' && film.watchtime > 5 && film.watchtime < 90;
-    const isSerieWithProgress =
-      type === 'serie' &&
-      Array.isArray(film.saison) &&
-      film.saison.some(s =>
-        Array.isArray(s.episodes) &&
-        s.episodes.some(ep => ep.watchtime > 5 && ep.watchtime < 90)
-      );
-    return isFilmWithProgress || isSerieWithProgress;
+  const filmsToResume = displayedFilms.filter(film => {
+    return getWatchtime(film) > 0;
   });
 
   const shouldUseSlider = filmsToResume.length > 5 || (isMobile && filmsToResume.length > 2);
@@ -66,9 +116,12 @@ return (
     <div className='headpage'>
       {randomHeadIMG && (
         <img
-          src={`/minia/${isMobile ? randomHeadIMG.miniPortrait : randomHeadIMG.miniPaysage}`}
+          src={getImageUrl(isMobile ? (randomHeadIMG.miniPortrait || randomHeadIMG.miniPaysage) : (randomHeadIMG.miniPaysage || randomHeadIMG.miniPortrait)) || ''}
           alt="image d'accueil aléatoire"
           className="headpageIMG"
+          onError={(e) => {
+            e.currentTarget.style.opacity = '0.3';
+          }}
         />
       )}
       
@@ -97,13 +150,12 @@ return (
             id="HeadFavorie"
             className="headButton"
             onClick={() => {
-              if (!randomHeadIMG?.id) return;
-              toggleFavori(randomHeadIMG.id, randomHeadIMG.favori);
-
-              // Mise à jour immédiate côté UI
+              if (!randomHeadIMG) return;
+              const isFav = toggleFilmFavori(randomHeadIMG);
               setRandomFilm(prev => ({
                 ...prev,
-                favori: !prev.favori,
+                favori: isFav,
+                favorie: isFav,
               }));
             }}
           >
@@ -117,10 +169,10 @@ return (
                 d="M26.347 12.0074L22.0042 2.99257C21.2568 1.44102 19.0284 1.49675 18.3594 3.08372L14.6289 11.9337C14.3509 12.5933 13.7414 13.0541 13.031 13.1417L4.14202 14.2388C2.47553 14.4445 1.789 16.4881 2.99333 17.6582L9.96559 24.4322C10.4853 24.9371 10.6913 25.6837 10.5039 26.3837L7.76476 36.6185C7.31529 38.2979 9.07487 39.7116 10.618 38.9108L19.1596 34.4781C19.7372 34.1783 20.4245 34.1783 21.0021 34.4781L29.8046 39.0462C31.3054 39.825 33.0355 38.5056 32.6815 36.8522L30.4412 26.3889C30.2905 25.6849 30.5297 24.9543 31.0675 24.4759L38.6623 17.7193C39.9533 16.5708 39.2786 14.4362 37.5621 14.2382L27.9197 13.1262C27.2383 13.0476 26.6447 12.6254 26.347 12.0074Z"
                 stroke="#D9D9D9"
                 strokeWidth="3"
-                fill={randomHeadIMG?.favori ? "#D9D9D9" : "none"}
+                fill={isFilmFavori(randomHeadIMG) ? "#D9D9D9" : "none"}
               />
             </svg>
-            <u>{randomHeadIMG?.favori ? "Retirer de la liste" : "Ajouter à la liste"}</u>
+            <u>{isFilmFavori(randomHeadIMG) ? "Retirer de la liste" : "Ajouter à la liste"}</u>
           </button>
 
         <span>{randomHeadIMG?.genre}</span>
@@ -130,6 +182,16 @@ return (
     </div>
     
   
+
+    {/* Bannière d'aide si des données sont manquantes */}
+    {incompleteCount > 0 && (
+      <div className="incomplete-films-banner">
+        <span className="banner-icon">⚠️</span>
+        <span className="banner-text">
+          <strong>Mode détection de données :</strong> {incompleteCount} film(s)/série(s) ont des informations manquantes. Cliquez sur une miniature pour afficher la liste des champs à compléter.
+        </span>
+      </div>
+    )}
 
     {/* Section catalogue */}
     <div>
@@ -142,48 +204,75 @@ return (
             nextEl: '.catalogue-next',
             prevEl: '.catalogue-prev',
           }}
-          loop={true}
-          spaceBetween={12}
-          speed={900}
+          loop={displayedFilms.length > 8}
+          loopAddBlankSlides={false}
+          spaceBetween={16}
+          speed={600}
           className="slider-swiper"
-           breakpoints={{
-              0: {
-                slidesPerView: 1.1,
-                slidesPerGroup: 1,
-              },
-              376: {
-                slidesPerView: 1.2,
-                slidesPerGroup: 1,
-              },
-              481: {
-                slidesPerView: 2.2,
-                slidesPerGroup: 2,
-              },
-              769: {
-                slidesPerView: 3,
-                slidesPerGroup: 3,
-              },
-              1025: {
-                slidesPerView: 4.2,
-                slidesPerGroup: 4,
-              },
-              1441: {
-                slidesPerView: 5.5,
-                slidesPerGroup: 5,
-              },
-            }}
+          breakpoints={{
+            0: {
+              slidesPerView: 2.2,
+              slidesPerGroup: 2,
+            },
+            481: {
+              slidesPerView: 3.2,
+              slidesPerGroup: 3,
+            },
+            769: {
+              slidesPerView: 4.2,
+              slidesPerGroup: 4,
+            },
+            1025: {
+              slidesPerView: 5.2,
+              slidesPerGroup: 5,
+            },
+            1441: {
+              slidesPerView: 6.2,
+              slidesPerGroup: 6,
+            },
+          }}
         >
-          {films.map((film, index) => (
-            <SwiperSlide key={index}>
-              <div className="miniatureportrait">
-                <img
-                  src={`/minia/${film.miniPortrait}`}
-                  alt={`portrait de ${film.titre}`}
-                  onClick={() => setSelectedFilm(film)}
-                />
-              </div>
-            </SwiperSlide>
-          ))}
+          {displayedFilms.map((film, index) => {
+            const missing = getMissingFields(film);
+            const portraitUrl = getImageUrl(film.miniPortrait) || getImageUrl(film.miniPaysage) || getImageUrl(film.affiche);
+            const wt = getWatchtime(film);
+            return (
+              <SwiperSlide key={film.id || index}>
+                <div className="miniatureportrait" onClick={() => setSelectedFilm(film)}>
+                  {missing.length > 0 && (
+                    <div className="card-missing-badge" title={`Champs à compléter : ${missing.join(', ')}`}>
+                      <span>⚠️ {missing.length}</span>
+                    </div>
+                  )}
+                  {portraitUrl ? (
+                    <img
+                      src={portraitUrl}
+                      alt={`portrait de ${film.titre || 'film'}`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div className="card-fallback-placeholder" style={{ display: portraitUrl ? 'none' : 'flex' }}>
+                    <span className="placeholder-icon">🎬</span>
+                    <span className="placeholder-title">{film.titre || film.title || 'Sans titre'}</span>
+                    <span className="placeholder-alert">⚠️ Image manquante</span>
+                  </div>
+                  {wt > 0 && (
+                    <div className="card-progressbar">
+                      <div
+                        className="card-progressbar-fill"
+                        style={{ width: `${wt}%` }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
         <button className="catalogue-next Portrait-nav">&gt;</button>
       </div>
@@ -202,67 +291,120 @@ return (
                 nextEl: '.reprendre-next',
                 prevEl: '.reprendre-prev',
               }}
-              loop={true}
-              spaceBetween={12}
-          slidesPerView={isMobile ? 2.3 : 5}
-          slidesPerGroup={isMobile ? 2 : 5}
-              speed={900}
+              loop={false}
+              loopAddBlankSlides={false}
+              spaceBetween={16}
+              speed={600}
               className="slider-swiper"
               breakpoints={{
-              0: {
-
-                slidesPerView: 1.12,
-                slidesPerGroup: 1,
-              },
-              376: {
-
-                slidesPerView: 1.5,
-                slidesPerGroup: 1,
-              },
-              481: {
-                slidesPerView: 2.3,
-                slidesPerGroup: 2,
-              },
-              769: {
-                slidesPerView: 3,
-                slidesPerGroup: 3,
-              },
-              1025: {
-                slidesPerView: 4.2,
-                slidesPerGroup: 4,
-              },
-              1441: {
-                slidesPerView: 5,
-                slidesPerGroup: 5,
-              },
-            }}
+                0: {
+                  slidesPerView: 1.2,
+                  slidesPerGroup: 1,
+                },
+                481: {
+                  slidesPerView: 2.2,
+                  slidesPerGroup: 1,
+                },
+                769: {
+                  slidesPerView: 3.2,
+                  slidesPerGroup: 2,
+                },
+                1025: {
+                  slidesPerView: 4.2,
+                  slidesPerGroup: 3,
+                },
+                1441: {
+                  slidesPerView: 5.2,
+                  slidesPerGroup: 4,
+                },
+              }}
             >
-              {filmsToResume.map((film, index) => (
-                <SwiperSlide key={index}>
-                  <div className="miniaturepaysage">
-                    <img
-                      src={`/minia/${film.miniPaysage}`}
-                      alt={`paysage de ${film.titre}`}
-                      onClick={() => setSelectedFilm(film)}
-                    />
-                  </div>
-                </SwiperSlide>
-              ))}
+              {filmsToResume.map((film, index) => {
+                const missing = getMissingFields(film);
+                const paysageUrl = getImageUrl(film.miniPaysage) || getImageUrl(film.miniPortrait) || getImageUrl(film.affiche);
+                const wt = getWatchtime(film);
+                return (
+                  <SwiperSlide key={film.id || index}>
+                    <div className="miniaturepaysage" onClick={() => setSelectedFilm(film)}>
+                      {missing.length > 0 && (
+                        <div className="card-missing-badge" title={`Champs à compléter : ${missing.join(', ')}`}>
+                          <span>⚠️ {missing.length}</span>
+                        </div>
+                      )}
+                      {paysageUrl ? (
+                        <img
+                          src={paysageUrl}
+                          alt={`paysage de ${film.titre || 'film'}`}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className="card-fallback-placeholder" style={{ display: paysageUrl ? 'none' : 'flex' }}>
+                        <span className="placeholder-icon">🎬</span>
+                        <span className="placeholder-title">{film.titre || film.title || 'Sans titre'}</span>
+                        <span className="placeholder-alert">⚠️ Image manquante</span>
+                      </div>
+                      {wt > 0 && (
+                        <div className="card-progressbar">
+                          <div
+                            className="card-progressbar-fill"
+                            style={{ width: `${wt}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  </SwiperSlide>
+                );
+              })}
             </Swiper>
             <button className="reprendre-next Paysage-nav">&gt;</button>
           </div>
         ) : ( 
           <div className='margin-section'>
               <div className="miniatures-paysage">
-              {filmsToResume.map((film, index) => (
-                <div key={index} className="miniaturepaysage">
-                  <img
-                    src={`/minia/${film.miniPaysage}`}
-                    alt={`paysage de ${film.titre}`}
-                    onClick={() => setSelectedFilm(film)}
-                  />
-                </div>
-              ))}
+              {filmsToResume.map((film, index) => {
+                const missing = getMissingFields(film);
+                const paysageUrl = getImageUrl(film.miniPaysage) || getImageUrl(film.miniPortrait) || getImageUrl(film.affiche);
+                const wt = getWatchtime(film);
+                return (
+                  <div key={film.id || index} className="miniaturepaysage" onClick={() => setSelectedFilm(film)}>
+                    {missing.length > 0 && (
+                      <div className="card-missing-badge" title={`Champs à compléter : ${missing.join(', ')}`}>
+                        <span>⚠️ {missing.length}</span>
+                      </div>
+                    )}
+                    {paysageUrl ? (
+                      <img
+                        src={paysageUrl}
+                        alt={`paysage de ${film.titre || 'film'}`}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div className="card-fallback-placeholder" style={{ display: paysageUrl ? 'none' : 'flex' }}>
+                      <span className="placeholder-icon">🎬</span>
+                      <span className="placeholder-title">{film.titre || film.title || 'Sans titre'}</span>
+                      <span className="placeholder-alert">⚠️ Image manquante</span>
+                    </div>
+                    {wt > 0 && (
+                      <div className="card-progressbar">
+                        <div
+                          className="card-progressbar-fill"
+                          style={{ width: `${wt}%` }}
+                        ></div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
           </div>
           
@@ -280,53 +422,87 @@ return (
             nextEl: '.succes-next',
             prevEl: '.succes-prev',
           }}
-          loop={true}
-          spaceBetween={12}
-          speed={900}
+          loop={false}
+          loopAddBlankSlides={false}
+          spaceBetween={16}
+          speed={600}
           className="slider-swiper centred-swiper"
           breakpoints={{
-              0: {
-                // slidesPerView: 4,
-                // slidesPerGroup: 4,
-                slidesPerView: 2.2,
-                slidesPerGroup: 2,
-              },
-              376: {
-                slidesPerView: 2.5
-                ,
-                slidesPerGroup: 2,
-              },
-        
-              481: {
-                slidesPerView: 4.15,
-                slidesPerGroup: 4,
-              },
-        
-              769: {
-                slidesPerView: 4.5,
-                slidesPerGroup: 4,
-              },
-
-            }}
+            0: {
+              slidesPerView: 1.8,
+              slidesPerGroup: 1,
+            },
+            481: {
+              slidesPerView: 2.8,
+              slidesPerGroup: 2,
+            },
+            769: {
+              slidesPerView: 3.8,
+              slidesPerGroup: 3,
+            },
+            1025: {
+              slidesPerView: 4.8,
+              slidesPerGroup: 4,
+            },
+            1441: {
+              slidesPerView: 5.8,
+              slidesPerGroup: 5,
+            },
+          }}
         >
-          {top10MostViewed.map((film, index) => (
-            <SwiperSlide key={index}>
-              <div className={isMobile ? "miniahybride" : "miniaturepaysage"}>
-                <img
-                  src={`/minia/${isMobile ? film.miniPortrait : film.miniPaysage}`}
-                  alt={`image de ${film.titre}`}
-                  onClick={() => setSelectedFilm(film)}
-                />
-              </div>
-            </SwiperSlide>
-          ))}
+          {top10MostViewed.map((film, index) => {
+            const missing = getMissingFields(film);
+            const imgUrl = getImageUrl(isMobile ? (film.miniPortrait || film.affiche || film.miniPaysage) : (film.miniPaysage || film.miniPortrait || film.affiche));
+            const wt = getWatchtime(film);
+            return (
+              <SwiperSlide key={film.id || index}>
+                <div className={isMobile ? "miniahybride" : "miniaturepaysage"} onClick={() => setSelectedFilm(film)}>
+                  {missing.length > 0 && (
+                    <div className="card-missing-badge" title={`Champs à compléter : ${missing.join(', ')}`}>
+                      <span>⚠️ {missing.length}</span>
+                    </div>
+                  )}
+                  {imgUrl ? (
+                    <img
+                      src={imgUrl}
+                      alt={`image de ${film.titre || 'film'}`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div className="card-fallback-placeholder" style={{ display: imgUrl ? 'none' : 'flex' }}>
+                    <span className="placeholder-icon">🎬</span>
+                    <span className="placeholder-title">{film.titre || film.title || 'Sans titre'}</span>
+                    <span className="placeholder-alert">⚠️ Image manquante</span>
+                  </div>
+                  {wt > 0 && (
+                    <div className="card-progressbar">
+                      <div
+                        className="card-progressbar-fill"
+                        style={{ width: `${wt}%` }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
         <button className="succes-next Paysage-nav">&gt;</button>
         </div>
         
       </div>
     {/* Modal */}
-    <Modal film={selectedFilm} onClose={() => setSelectedFilm(null)} />
+    <Modal
+      film={selectedFilm}
+      onClose={() => setSelectedFilm(null)}
+      allFilms={films}
+      onSelectFilm={setSelectedFilm}
+    />
   </div>
 );
 

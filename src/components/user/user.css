@@ -1,0 +1,91 @@
+#nav-user {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+#user-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#user-btn img {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background-color: #003362;
+  border: 1px solid #004b87;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#user-btn:hover img {
+  background-color: #004b87;
+  border-color: #0090ff;
+}
+
+#user-btn p {
+  color: #e5e5e5;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+#user-links {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background-color: rgba(20, 20, 20, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #333333;
+  border-radius: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+  padding: 6px 0;
+  z-index: 150;
+  flex-direction: column;
+}
+
+#user-links a,
+#user-links p {
+  display: block;
+  padding: 9px 16px;
+  color: #e5e5e5;
+  text-decoration: none;
+  font-size: 0.88rem;
+  margin: 0;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  text-align: left;
+}
+
+#user-links a:hover,
+#user-links p:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+#user-links p {
+  border-top: 1px solid #2e2e2e;
+  margin-top: 4px;
+  padding-top: 10px;
+  color: #ff5555;
+}
+
+#user-links p:hover {
+  color: #ff3333;
+  background-color: rgba(255, 50, 50, 0.12);
+}
